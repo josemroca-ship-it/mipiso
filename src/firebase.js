@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 
-const firebaseConfig = {
+
 const firebaseConfig = {
   apiKey: "AIzaSyAlfH-3aWjCoDZ2qp0OBEJ8IbVDtN-o__8",
   authDomain: "mipiso-5100d.firebaseapp.com",
