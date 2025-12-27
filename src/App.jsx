@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db } from './firebase';
+import { db } from './firebase.js';
 import { ref, onValue, push, update, remove } from 'firebase/database';
 import { Plus, Trash2, Edit2, Save, X, Home, Printer, CheckSquare, Square, LogOut, Users } from 'lucide-react';
 
