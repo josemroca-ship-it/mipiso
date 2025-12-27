@@ -1,7 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 
-
 const firebaseConfig = {
   apiKey: "AIzaSyAlfH-3aWjCoDZ2qp0OBEJ8IbVDtN-o__8",
   authDomain: "mipiso-5100d.firebaseapp.com",
@@ -12,7 +11,8 @@ const firebaseConfig = {
   appId: "1:405663604160:web:f471516aebab1b828a7c25"
 };
 
+// Inicializar la app
 const app = initializeApp(firebaseConfig);
 
-// ¡FÍJATE EN LA PALABRA 'export' AQUÍ ABAJO!
+// Exportar la base de datos
 export const db = getDatabase(app);
