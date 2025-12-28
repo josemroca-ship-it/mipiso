@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { db } from './firebase-config.js';
+import { db } from './firebase-config';
 import { ref, onValue, push, update, remove } from 'firebase/database';
-import { Plus, Trash2, Edit2, Save, X, Home, Printer, CheckSquare, Square, LogOut, Users } from 'lucide-react';
+import { Plus, Trash2, Edit2, Save, Home, Printer, CheckSquare, Square, LogOut, Users } from 'lucide-react';
 
 // --- Componentes UI ---
 const Card = ({ title, value, subtext, color }) => (
@@ -30,12 +30,11 @@ export default function App() {
   useEffect(() => {
     if (!isJoined || !roomName) return;
 
-    // Escuchar cambios en tiempo real en la base de datos
+    // Escuchar cambios en tiempo real
     const itemsRef = ref(db, `rooms/${roomName}/items`);
     const unsubscribe = onValue(itemsRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        // Convertir objeto de objetos a array
         const list = Object.keys(data).map(key => ({ id: key, ...data[key] }));
         setItems(list);
       } else {
@@ -47,11 +46,11 @@ export default function App() {
     return () => unsubscribe();
   }, [isJoined, roomName]);
 
-  // --- MANEJADORES DE ACCIÓN ---
+  // --- MANEJADORES ---
   const handleJoin = (e) => {
     e.preventDefault();
     if(!roomName.trim()) return;
-    localStorage.setItem('my-room-name', roomName); // Guardar sesión
+    localStorage.setItem('my-room-name', roomName);
     setIsJoined(true);
   };
 
@@ -65,7 +64,6 @@ export default function App() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (isEditing) {
-      // Actualizar en Firebase
       const itemRef = ref(db, `rooms/${roomName}/items/${formData.id}`);
       update(itemRef, {
         name: formData.name, room: formData.room, quantity: formData.quantity,
@@ -73,7 +71,6 @@ export default function App() {
       });
       setIsEditing(false);
     } else {
-      // Crear en Firebase
       const listRef = ref(db, `rooms/${roomName}/items`);
       push(listRef, { ...formData, purchased: false });
     }
@@ -92,7 +89,6 @@ export default function App() {
     });
   };
 
-  // --- UTILIDADES ---
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -117,7 +113,7 @@ export default function App() {
   const totalSpent = filteredItems.reduce((acc, item) => acc + (item.realPrice * item.quantity), 0);
   const difference = totalBudget - totalSpent;
 
-  // --- VISTA: LOGIN (Selección de Sala) ---
+  // --- VISTA: LOGIN ---
   if (!isJoined) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
@@ -139,7 +135,6 @@ export default function App() {
               Entrar al Espacio
             </button>
           </form>
-          <p className="text-xs text-gray-400 mt-4">Comparte este nombre con quien quieras que vea la lista.</p>
         </div>
       </div>
     );
@@ -170,8 +165,7 @@ export default function App() {
           </div>
         </header>
 
-        {/* Loading State */}
-        {loading && <div className="text-center py-4">Cargando datos de la nube...</div>}
+        {loading && <div className="text-center py-4">Cargando datos...</div>}
 
         {/* Filtros */}
         <div className="flex overflow-x-auto pb-2 mb-6 gap-2 print:hidden scrollbar-hide">
@@ -188,24 +182,60 @@ export default function App() {
           <Card title="Balance" value={`${Math.abs(difference).toFixed(0)} €`} subtext={difference >= 0 ? "+ Ahorro" : "- Déficit"} color={difference >= 0 ? "#10B981" : "#EF4444"} />
         </div>
 
-        {/* Formulario */}
+        {/* Formulario (CON CABECERAS AÑADIDAS) */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-8 border border-gray-200 print:hidden">
           <h2 className="text-sm font-bold uppercase text-gray-500 mb-4 flex items-center gap-2">
             {isEditing ? <Edit2 size={16}/> : <Plus size={16}/>} {isEditing ? 'Editar Ítem' : 'Añadir Nuevo'}
           </h2>
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-3">
-            <div className="lg:col-span-4"><input required name="name" value={formData.name} onChange={handleInputChange} className="w-full p-2 bg-gray-50 border rounded outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Nombre (ej. Lámpara)" /></div>
+          
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4">
+            
+            {/* Campo: Nombre */}
+            <div className="lg:col-span-4">
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre del producto</label>
+              <input required name="name" value={formData.name} onChange={handleInputChange} className="w-full p-2 bg-gray-50 border rounded outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ej. Lámpara de pie" />
+            </div>
+
+            {/* Campo: Habitación */}
             <div className="lg:col-span-2">
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Habitación</label>
                <select name="room" value={formData.room} onChange={handleInputChange} className="w-full p-2 bg-gray-50 border rounded outline-none focus:ring-2 focus:ring-indigo-500">
                 {rooms.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
-            <div className="lg:col-span-1"><input type="number" min="1" name="quantity" value={formData.quantity} onChange={handleInputChange} className="w-full p-2 bg-gray-50 border rounded outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Cant." /></div>
-            <div className="lg:col-span-2"><input type="number" step="0.1" name="budgetPrice" value={formData.budgetPrice} onChange={handleInputChange} className="w-full p-2 bg-gray-50 border rounded outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Presup." /></div>
-            <div className="lg:col-span-2"><input type="number" step="0.1" name="realPrice" value={formData.realPrice} onChange={handleInputChange} className="w-full p-2 bg-gray-50 border rounded outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Real" /></div>
-            <div className="lg:col-span-1"><button type="submit" className="w-full h-full bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center justify-center"><Save size={18} /></button></div>
+
+            {/* Campo: Cantidad */}
+            <div className="lg:col-span-1">
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Cant.</label>
+              <input type="number" min="1" name="quantity" value={formData.quantity} onChange={handleInputChange} className="w-full p-2 bg-gray-50 border rounded outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+
+            {/* Campo: Presupuesto */}
+            <div className="lg:col-span-2">
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Presupuesto (€)</label>
+              <input type="number" step="0.1" name="budgetPrice" value={formData.budgetPrice} onChange={handleInputChange} className="w-full p-2 bg-gray-50 border rounded outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+
+            {/* Campo: Precio Real */}
+            <div className="lg:col-span-2">
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Precio Real (€)</label>
+              <input type="number" step="0.1" name="realPrice" value={formData.realPrice} onChange={handleInputChange} className="w-full p-2 bg-gray-50 border rounded outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+
+            {/* Botón Guardar */}
+            <div className="lg:col-span-1 flex items-end">
+              <button type="submit" className="w-full p-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center justify-center h-[42px] mt-auto">
+                <Save size={18} />
+              </button>
+            </div>
+            
           </form>
-           {isEditing && <button onClick={resetForm} className="text-xs text-red-500 mt-2 underline">Cancelar edición</button>}
+          
+           {isEditing && (
+             <div className="mt-2 text-right">
+                <button onClick={resetForm} className="text-xs text-red-500 underline">Cancelar edición</button>
+             </div>
+           )}
         </div>
 
         {/* Lista */}
